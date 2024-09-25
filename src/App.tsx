@@ -10,9 +10,12 @@ const App = () => {
         <li>Take a memory snapshot and see there is one Editor</li>
         <li>Repeast the following 3x:
           <ol>
-            <li>Edit the content below in any way (delete or add some letters)</li>
+            <li>Put the cursor anywhere in the editor body.</li>
             <li>Increment count:
-              <button onClick={() => setCount(count + 1)}>count: {count}</button>
+              <button onClick={() => {
+                setCount(count + 1)
+                console.log('---- count', count +1, '----');
+              }}>count: {count}</button>
             </li>
           </ol>
         </li>
