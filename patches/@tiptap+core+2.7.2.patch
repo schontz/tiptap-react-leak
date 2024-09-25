@@ -1,0 +1,62 @@
+diff --git a/node_modules/@tiptap/core/dist/index.js b/node_modules/@tiptap/core/dist/index.js
+index 74a644f..9b9cdb1 100644
+--- a/node_modules/@tiptap/core/dist/index.js
++++ b/node_modules/@tiptap/core/dist/index.js
+@@ -42,9 +42,12 @@ function createChainableState(config) {
+     };
+ }
+ 
++let nextCMId = 1;
+ class CommandManager {
+     constructor(props) {
++        this.id = nextCMId++;
+         this.editor = props.editor;
++        console.warn('new CommandManager', this.id, 'for editor', this.editor.id);
+         this.rawCommands = this.editor.extensionManager.commands;
+         this.customState = props.state;
+     }
+@@ -4023,9 +4026,12 @@ function createStyleTag(style, nonce, suffix) {
+     return styleNode;
+ }
+ 
++let nextEditorId = 1;
+ class Editor extends EventEmitter {
+     constructor(options = {}) {
+         super();
++        this.id = nextEditorId++;
++        console.log('new Editor', this.id);
+         this.isFocused = false;
+         /**
+          * The editor is considered initialized after the `create` event has been emitted.
+@@ -4274,6 +4280,7 @@ class Editor extends EventEmitter {
+                 selection: selection || undefined,
+             }),
+         });
++        console.log('new EditorView', this.id, this.view.id);
+         // `editor.view` is not yet available at this time.
+         // Therefore we will add all plugins and node views directly afterwards.
+         const newState = this.state.reconfigure({
+@@ -4285,8 +4292,8 @@ class Editor extends EventEmitter {
+         // Let’s store the editor instance in the DOM element.
+         // So we’ll have access to it for tests.
+         // @ts-ignore
+-        const dom = this.view.dom;
+-        dom.editor = this;
++        // const dom = this.view.dom;
++        // dom.editor = this;
+     }
+     /**
+      * Creates all node views.
+@@ -4430,9 +4437,12 @@ class Editor extends EventEmitter {
+      */
+     destroy() {
+         this.emit('destroy');
++        console.log('destroy Editor', this.id, this.view.id);
+         if (this.view) {
+             this.view.destroy();
+         }
++        this.commandManager = null;
++        this.extensionManager = null;
+         this.removeAllListeners();
+     }
+     /**

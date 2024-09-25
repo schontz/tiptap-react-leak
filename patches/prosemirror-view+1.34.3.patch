@@ -1,0 +1,84 @@
+diff --git a/node_modules/prosemirror-view/dist/index.js b/node_modules/prosemirror-view/dist/index.js
+index 7d06428..13116b9 100644
+--- a/node_modules/prosemirror-view/dist/index.js
++++ b/node_modules/prosemirror-view/dist/index.js
+@@ -1493,6 +1493,7 @@ class TextViewDesc extends NodeViewDesc {
+         this.updateOuterDeco(outerDeco);
+         if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.nodeDOM.nodeValue) {
+             this.nodeDOM.nodeValue = node.text;
++            console.log('update TextViewDesc', view.id, 'connected?', view.trackWrites?.getRootNode()?.isConnected);
+             if (view.trackWrites == this.nodeDOM)
+                 view.trackWrites = null;
+         }
+@@ -1615,6 +1616,7 @@ function renderDescs(parentDOM, descs, view) {
+         dom = rm(dom);
+         written = true;
+     }
++    console.log('renderDescs', view.id, view.trackWrites?.getRootNode()?.isConnected);
+     if (written && view.trackWrites == parentDOM)
+         view.trackWrites = null;
+ }
+@@ -5202,6 +5204,7 @@ const __parseFromClipboard = parseFromClipboard;
+ @internal
+ */
+ const __endComposition = endComposition;
++let nextEditorViewId = 1;
+ /**
+ An editor view manages the DOM structure that represents an
+ editable document. Its state and behavior are determined by its
+@@ -5216,6 +5219,8 @@ class EditorView {
+     added to the document.
+     */
+     constructor(place, props) {
++        this.id = nextEditorViewId++;
++        console.log('new EditorView', this.id);
+         this._root = null;
+         /**
+         @internal
+@@ -5224,7 +5229,7 @@ class EditorView {
+         /**
+         Kludge used to work around a Chrome bug @internal
+         */
+-        this.trackWrites = null;
++        // this.trackWrites = null;
+         this.mounted = false;
+         /**
+         @internal
+@@ -5279,6 +5284,11 @@ class EditorView {
+         initInput(this);
+         this.updatePluginViews();
+     }
++    get trackWrites() { return this.trackWritesRef?.deref() }
++    set trackWrites(value) {
++        if (value) this.trackWritesRef = new WeakRef(value)
++        else this.trackWritesRef = null;
++    }
+     /**
+     Holds `true` when a
+     [composition](https://w3c.github.io/uievents/#events-compositionevents)
+@@ -5379,6 +5389,16 @@ class EditorView {
+                 // tracks that and forces a selection reset when our update
+                 // did write to the node.
+                 let chromeKludge = chrome ? (this.trackWrites = this.domSelectionRange().focusNode) : null;
++                console.log('assigning trackWrites', this.id, 'has kludge?', !!chromeKludge, 'connected?', chromeKludge?.getRootNode()?.isConnected);
++                if (this.trackWrites) {
++                    requestAnimationFrame(() => {
++                        const isConnected = this.trackWrites?.getRootNode()?.isConnected
++                        console.log('still connected?', this.id, isConnected);
++                        if (!isConnected) {
++                            this.trackWrites = null;
++                        }
++                    });
++                }
+                 if (this.composing)
+                     this.input.compositionNode = findCompositionNode(this);
+                 if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
+@@ -5648,6 +5668,8 @@ class EditorView {
+     destroy() {
+         if (!this.docView)
+             return;
++        this.trackWrites = null;
++        console.log('destroy EditorView', this.id, 'and trackWrites?', !this.trackWrites);
+         destroyInput(this);
+         this.destroyPluginViews();
+         if (this.mounted) {
